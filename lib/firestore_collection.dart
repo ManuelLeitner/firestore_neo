@@ -2,9 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/widgets.dart';
 
 import 'dependency_loader.dart';
-import 'firestore_extensions.dart';
 import 'firestore_neo.dart';
-import 'json_object.dart';
 
 class FirestoreQuery<T extends JsonObject> {
   Query<Document> query;

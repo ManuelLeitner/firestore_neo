@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  cloud_firestore: ^4.17.3
+  cloud_firestore: ^4.17.5
   json_annotation: ^4.9.0
   collection: ^1.18.0
 

@@ -3,8 +3,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'firestore_neo.dart';
-import 'firestore_extensions.dart';
-import 'json_object.dart';
 
 class DependencyLoader {
   static Document toJson(dynamic data) {
