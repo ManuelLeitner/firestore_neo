@@ -14,6 +14,7 @@ class FirestoreQuery<T extends JsonObject> {
       await for (var snap in query.snapshots()) {
         var raw =
             await DependencyLoader.loadObjectList<T>(firestoreNeo, snap.docs);
+        raw.sort();
         yield raw;
       }
     } catch (e, stack) {

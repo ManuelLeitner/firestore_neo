@@ -37,11 +37,12 @@ extension FirestoreQueryExtension<T> on Query<T> {
     try {
       var qs = await get(const GetOptions(source: Source.cache));
       if (qs.docs.isEmpty) {
-        return get(GetOptions(source: source?.source ?? Source.serverAndCache));
+        return await get(
+            GetOptions(source: source?.source ?? Source.serverAndCache));
       }
       return qs;
     } catch (_) {
-      return get(const GetOptions(source: Source.server));
+      return await get(const GetOptions(source: Source.server));
     }
   }
 

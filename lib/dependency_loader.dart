@@ -43,7 +43,7 @@ class DependencyLoader {
     return references;
   }
 
-  static Future loadObjectList<T extends JsonObject>(
+  static Future<List<T>> loadObjectList<T extends JsonObject>(
       FirestoreNeo firestoreNeo, List<DocumentSnapshot<Document>> data,
       [FirestoreSource? source]) async {
     try {
