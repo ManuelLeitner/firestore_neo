@@ -72,7 +72,12 @@ class DependencyLoader {
       if (col == null) {
         throw Exception("no FirestoreCollection found for ${k.path}");
       }
-      res[k] = col.fromJson(res[k])..reference = k;
+      try {
+        res[k] = col.fromJson(res[k])..reference = k;
+      } catch (e, stack) {
+        debugPrint(e.toString());
+        debugPrintStack(stackTrace: stack);
+      }
     }
   }
 
