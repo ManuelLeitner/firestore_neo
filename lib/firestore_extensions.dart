@@ -35,14 +35,17 @@ extension FirestoreDocumentExtension<T> on DocumentReference<T> {
 extension FirestoreQueryExtension<T> on Query<T> {
   Future<QuerySnapshot<T>> getFromSource([FirestoreSource? source]) async {
     try {
-      var qs = await get(const GetOptions(source: Source.cache));
-      if (qs.docs.isEmpty) {
-        return await get(
-            GetOptions(source: source?.source ?? Source.serverAndCache));
+      source ??= FirestoreSource.serverAndCache;
+      if (source == FirestoreSource.cacheOrServer) {
+        var ds = await get(const GetOptions(source: Source.cache));
+        return ds;
       }
-      return qs;
+      return get(GetOptions(source: source.source!));
     } catch (_) {
-      return await get(const GetOptions(source: Source.server));
+      if (source == FirestoreSource.cacheOrServer) {
+        return get(const GetOptions(source: Source.server));
+      }
+      rethrow;
     }
   }
 
@@ -55,11 +58,16 @@ extension FirestoreQueryExtension<T> on Query<T> {
 extension FirestoreCollectExtension<T> on CollectionReference<T> {
   Future<QuerySnapshot<T>> getFromSource(FirestoreSource source) async {
     try {
-      var qs = await get(const GetOptions(source: Source.cache));
-      if (qs.docs.isEmpty) return get(GetOptions(source: source.source!));
-      return qs;
+      if (source == FirestoreSource.cacheOrServer) {
+        var ds = await get(const GetOptions(source: Source.cache));
+        return ds;
+      }
+      return get(GetOptions(source: source.source!));
     } catch (_) {
-      return get(const GetOptions(source: Source.server));
+      if (source == FirestoreSource.cacheOrServer) {
+        return get(const GetOptions(source: Source.server));
+      }
+      rethrow;
     }
   }
 

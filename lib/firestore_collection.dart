@@ -12,8 +12,8 @@ class FirestoreQuery<T extends JsonObject> {
   Stream<List<T>> get stream async* {
     try {
       await for (var snap in query.snapshots()) {
-        var raw =
-            await DependencyLoader.loadObjectList<T>(firestoreNeo, snap.docs);
+        var raw = await DependencyLoader.loadObjectList<T>(
+            firestoreNeo, snap.docs, FirestoreSource.server);
         raw.sort();
         yield raw;
       }
