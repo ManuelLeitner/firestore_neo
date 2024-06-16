@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
@@ -127,13 +129,14 @@ class DependencyLoader {
 
     Map<DocRef, dynamic> res = {};
     for (var col in collections.entries) {
-      var query = await col.key
-          .where(FieldPath.documentId, whereIn: col.value.map((e) => e.id))
-          .getFromSource(source);
-      for (var doc in query.docs) {
-        var d = doc.data();
-        // d["reference"] = doc.reference;
-        res[doc.reference] = d;
+      for (var slice in col.value.slices(30)) {
+        var query = await col.key
+            .where(FieldPath.documentId, whereIn: slice.map((e) => e.id))
+            .getFromSource(source);
+        for (var doc in query.docs) {
+          var d = doc.data();
+          res[doc.reference] = d;
+        }
       }
     }
     return res;
