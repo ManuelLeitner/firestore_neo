@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
@@ -77,7 +75,7 @@ class DependencyLoader {
       try {
         res[k] = col.fromJson(res[k])..reference = k;
       } catch (e, stack) {
-        debugPrint(e.toString());
+        debugPrint("Parsing failed for ${k.path}: $e\n${res[k]}");
         debugPrintStack(stackTrace: stack);
       }
     }
