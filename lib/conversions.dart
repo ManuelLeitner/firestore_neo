@@ -15,7 +15,8 @@ List<Document> listToJson<T extends JsonObject>(List list) {
   ];
 }
 
-reference(JsonObject obj) => obj.reference;
+reference(JsonObject? obj) => obj?.reference;
+object(JsonObject? obj) => obj?.toJson();
 
 class DateNullConverter implements JsonConverter<DateTime?, dynamic> {
   const DateNullConverter();
