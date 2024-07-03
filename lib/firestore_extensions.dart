@@ -1,13 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirestoreSource {
-  static FirestoreSource cache = FirestoreSource(Source.cache);
-  static FirestoreSource server = FirestoreSource(Source.server);
+  static FirestoreSource cache = FirestoreSource._(Source.cache);
+  static FirestoreSource server = FirestoreSource._(Source.server);
   static FirestoreSource serverAndCache =
-      FirestoreSource(Source.serverAndCache);
-  static FirestoreSource cacheOrServer = FirestoreSource(null);
+      FirestoreSource._(Source.serverAndCache);
+  static FirestoreSource cacheOrServer = FirestoreSource._(null);
   Source? source;
-  FirestoreSource(this.source);
+  FirestoreSource._(this.source);
 }
 
 extension FirestoreDocumentExtension<T> on DocumentReference<T> {
