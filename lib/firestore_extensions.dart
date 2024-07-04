@@ -1,4 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firestore_neo/firestore_neo.dart';
+
+import 'dependency_loader.dart';
 
 class FirestoreSource {
   static FirestoreSource cache = FirestoreSource._(Source.cache);
@@ -52,6 +55,16 @@ extension FirestoreQueryExtension<T> on Query<T> {
   Future<List<T>> getFromSourceAsList([FirestoreSource? source]) async {
     var q = await getFromSource(source);
     return q.docs.map((e) => e.data()).toList();
+  }
+}
+
+extension FirestoreQueryExtensionWithDependencies
+    on Query<Map<String, dynamic>> {
+  Future<List<T>> getWithDependencies<T extends JsonObject>(
+      FirestoreNeo firestore,
+      [FirestoreSource? source]) async {
+    var q = await getFromSource(source);
+    return await DependencyLoader.loadObjectList<T>(firestore, q.docs);
   }
 }
 
