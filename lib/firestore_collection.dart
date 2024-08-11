@@ -55,4 +55,11 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
     return await DependencyLoader.loadObjectList<T>(
         firestoreNeo, (await query.getFromSource(source)).docs, source);
   }
+
+  Future<T> getById(String id, [FirestoreSource? source]) async {
+    var list = await path
+        .where(FieldPath.documentId, isEqualTo: id)
+        .getWithDependencies<T>(firestoreNeo, source);
+    return list.single;
+  }
 }
