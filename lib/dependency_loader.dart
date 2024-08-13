@@ -34,6 +34,14 @@ class DependencyLoader {
           .toList();
     } else if (data is DocRef) {
       references.add(data);
+    } else if (data is num ||
+        data is String ||
+        data is DateTime ||
+        data is bool ||
+        data is Timestamp ||
+        data == null) {
+    } else {
+      throw "unsupported type ${data.runtimeType}";
     }
     if (iterable != null) {
       for (var item in iterable) {
