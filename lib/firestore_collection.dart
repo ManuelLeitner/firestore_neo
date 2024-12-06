@@ -62,4 +62,11 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
         .getWithDependencies<T>(firestoreNeo, source);
     return list.single;
   }
+
+  Future<void> deleteAll() async {
+    var objs = await get(FirestoreSource.server);
+    for (var obj in objs) {
+      await delete(obj);
+    }
+  }
 }
