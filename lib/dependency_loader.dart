@@ -52,11 +52,13 @@ class DependencyLoader {
   }
 
   static Future<T> loadObject<T extends JsonObject>(
-      FirestoreNeo firestoreNeo, Map<String, dynamic> data,
+      FirestoreNeo firestoreNeo, DocumentReference<Map<String, dynamic>> ref,
       [FirestoreSource? source]) async {
+    var data = await ref.getFromSourceAsObject(source);
     var required = summarize(data, {});
 
     Map<DocRef, dynamic> loaded = await load(required, source);
+    loaded[ref] = data;
 
     Map<DocRef, dynamic> cache = {};
 
@@ -64,9 +66,7 @@ class DependencyLoader {
       loaded = await _loadObjectList(firestoreNeo, loaded, cache, source);
     }
     fromJson(loaded, firestoreNeo);
-    cache.addAll(loaded);
-
-    return loaded.values.single;
+    return loaded[ref];
   }
 
   static Future<List<T>> loadObjectList<T extends JsonObject>(

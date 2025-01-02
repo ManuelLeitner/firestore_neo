@@ -25,5 +25,5 @@ mixin JsonObject {
   }
 
   @override
-  int get hashCode => reference!.path.hashCode;
+  int get hashCode => reference?.path.hashCode ?? 0;
 }

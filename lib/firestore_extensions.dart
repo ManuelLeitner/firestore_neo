@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firestore_neo/firestore_neo.dart';
+import 'package:flutter/widgets.dart';
 
 import 'dependency_loader.dart';
 
@@ -10,11 +11,13 @@ class FirestoreSource {
       FirestoreSource._(Source.serverAndCache);
   static FirestoreSource cacheOrServer = FirestoreSource._(null);
   Source? source;
+
   FirestoreSource._(this.source);
 }
 
 extension FirestoreDocumentExtension<T> on DocumentReference<T> {
-  Future<DocumentSnapshot<T>> getFromSource(FirestoreSource source) async {
+  Future<DocumentSnapshot<T>> getFromSource([FirestoreSource? source]) async {
+    source = source ?? FirestoreSource.server;
     try {
       if (source == FirestoreSource.cacheOrServer) {
         var ds = await get(const GetOptions(source: Source.cache));
@@ -29,7 +32,7 @@ extension FirestoreDocumentExtension<T> on DocumentReference<T> {
     }
   }
 
-  Future<T> getFromSourceAsObject(FirestoreSource source) async {
+  Future<T> getFromSourceAsObject(FirestoreSource? source) async {
     var q = await getFromSource(source);
     return q.data()!;
   }
@@ -43,10 +46,13 @@ extension FirestoreQueryExtension<T> on Query<T> {
         var ds = await get(const GetOptions(source: Source.cache));
         return ds;
       }
-      return get(GetOptions(source: source.source!));
-    } catch (_) {
+      print(parameters);
+      return await get(GetOptions(source: source.source!));
+    } catch (e, stack) {
+      debugPrint(e.toString());
+      debugPrintStack(stackTrace: stack);
       if (source == FirestoreSource.cacheOrServer) {
-        return get(const GetOptions(source: Source.server));
+        return await get(const GetOptions(source: Source.server));
       }
       rethrow;
     }
@@ -65,6 +71,14 @@ extension FirestoreQueryExtensionWithDependencies
       [FirestoreSource? source]) async {
     var q = await getFromSource(source);
     return await DependencyLoader.loadObjectList<T>(firestore, q.docs);
+  }
+}
+
+extension FirestoreDocumentExtensionWithDependencies
+    on DocumentReference<Map<String, dynamic>> {
+  Future<T> getWithDependencies<T extends JsonObject>(FirestoreNeo firestore,
+      [FirestoreSource? source]) async {
+    return await DependencyLoader.loadObject<T>(firestore, this, source);
   }
 }
 
