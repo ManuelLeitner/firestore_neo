@@ -46,7 +46,6 @@ extension FirestoreQueryExtension<T> on Query<T> {
         var ds = await get(const GetOptions(source: Source.cache));
         return ds;
       }
-      print(parameters);
       return await get(GetOptions(source: source.source!));
     } catch (e, stack) {
       debugPrint(e.toString());
