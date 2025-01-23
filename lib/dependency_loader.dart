@@ -72,13 +72,14 @@ class DependencyLoader {
   static Future<List<T>> loadObjectList<T extends JsonObject>(
       FirestoreNeo firestoreNeo, List<DocumentSnapshot<Document>> data,
       [FirestoreSource? source]) async {
+    Map<DocRef, dynamic> res;
     try {
       Map<DocRef, dynamic> cache = {};
       Map<DocRef, dynamic> docs = data.groupFoldBy(
         (e) => e.reference,
         (previous, element) => element.data(),
       );
-      var res = await _loadObjectList(firestoreNeo, docs, cache, source);
+      res = await _loadObjectList(firestoreNeo, docs, cache, source);
       fromJson(res, firestoreNeo);
       assert(!res.values.any((element) => element.reference == null));
 
@@ -93,13 +94,15 @@ class DependencyLoader {
   static void fromJson(Map<DocRef, dynamic> res, FirestoreNeo firestoreNeo) {
     for (var k in res.keys) {
       var col = firestoreNeo.collections
-          .where((c) => c.path.path == k.parent.path)
+          .where((c) => c.isApplicable(k.parent))
           .firstOrNull;
       if (col == null) {
         throw Exception("no FirestoreCollection found for ${k.path}");
       }
       try {
-        res[k] = col.fromJson(res[k])..reference = k;
+        res[k] = col.fromJson(res[k])
+          ..reference = k
+          ..properties = res[k];
       } catch (e, stack) {
         debugPrint("Parsing failed for ${k.path}: $e\n${res[k]}");
         debugPrintStack(stackTrace: stack);

@@ -4,10 +4,28 @@ import 'package:flutter/widgets.dart';
 import 'dependency_loader.dart';
 import 'firestore_neo.dart';
 
-class FirestoreQuery<T extends JsonObject> {
-  Query<Document> query;
+abstract class FirestoreCollectionBase<T extends JsonObject> {
   T Function(Document d) fromJson;
   FirestoreNeo firestoreNeo;
+
+  FirestoreCollectionBase({required this.fromJson, required this.firestoreNeo});
+
+  bool isApplicable(CollectionReference ref);
+}
+
+class FirestoreDeserializer<T extends JsonObject>
+    extends FirestoreCollectionBase<T> {
+  FirestoreDeserializer({required super.fromJson, required super.firestoreNeo});
+
+  @override
+  bool isApplicable(CollectionReference<Object?> ref) {
+    return true;
+  }
+}
+
+abstract class FirestoreQuery<T extends JsonObject>
+    extends FirestoreCollectionBase<T> {
+  Query<Document> query;
 
   Stream<List<T>> get stream async* {
     try {
@@ -25,8 +43,8 @@ class FirestoreQuery<T extends JsonObject> {
 
   FirestoreQuery(
       {required this.query,
-      required this.fromJson,
-      required this.firestoreNeo});
+      required super.fromJson,
+      required super.firestoreNeo});
 }
 
 class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
@@ -53,7 +71,8 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
 
   Future<List<T>> get(FirestoreSource source) async {
     return await DependencyLoader.loadObjectList<T>(
-        firestoreNeo, (await query.getFromSource(source)).docs, source);
+        firestoreNeo, (await query.getFromSource(source)).docs, source)
+      ..sort();
   }
 
   Future<T> getById(String id, [FirestoreSource? source]) async {
@@ -61,10 +80,20 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
     return list;
   }
 
-  Future<void> deleteAll() async {
-    var objs = await get(FirestoreSource.server);
-    for (var obj in objs) {
-      await delete(obj);
+  Future<void> deleteAll([bool ignoreFilter = false]) async {
+    QuerySnapshot<Document> objs;
+    if (ignoreFilter) {
+      objs = await path.getFromSource(FirestoreSource.server);
+    } else {
+      objs = await query.getFromSource(FirestoreSource.server);
     }
+    for (var obj in objs.docs) {
+      await obj.reference.delete();
+    }
+  }
+
+  @override
+  bool isApplicable(CollectionReference<Object?> ref) {
+    return path.path == ref.path;
   }
 }

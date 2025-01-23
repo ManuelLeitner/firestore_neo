@@ -12,5 +12,5 @@ typedef Document = Map<String, dynamic>;
 typedef DocRef = DocumentReference<Document>;
 
 abstract class FirestoreNeo {
-  List<FirestoreCollection<JsonObject>> get collections;
+  List<FirestoreCollectionBase<JsonObject>> get collections;
 }
