@@ -4,21 +4,33 @@ import 'package:flutter/widgets.dart';
 import 'dependency_loader.dart';
 import 'firestore_neo.dart';
 
+const updatedAt = "updatedAt";
+
 abstract class FirestoreCollectionBase<T extends JsonObject> {
   T Function(Document d) fromJson;
   FirestoreNeo firestoreNeo;
 
-  FirestoreCollectionBase({required this.fromJson, required this.firestoreNeo});
+  /// load all optimizes to load in a way that only recently updated objects are loaded
+  /// However document id cannot be filtered
+  bool loadAll;
 
-  bool isApplicable(CollectionReference ref);
+  FirestoreCollectionBase(
+      {required this.fromJson,
+      required this.firestoreNeo,
+      required this.loadAll});
+
+  bool isApplicable(WrapColRef ref);
 }
 
 class FirestoreDeserializer<T extends JsonObject>
     extends FirestoreCollectionBase<T> {
-  FirestoreDeserializer({required super.fromJson, required super.firestoreNeo});
+  FirestoreDeserializer(
+      {required super.fromJson,
+      required super.firestoreNeo,
+      required super.loadAll});
 
   @override
-  bool isApplicable(CollectionReference<Object?> ref) {
+  bool isApplicable(WrapColRef ref) {
     return true;
   }
 }
@@ -30,8 +42,8 @@ abstract class FirestoreQuery<T extends JsonObject>
   Stream<List<T>> get stream async* {
     try {
       await for (var snap in query.snapshots()) {
-        var raw = await DependencyLoader.loadObjectList<T>(
-            firestoreNeo, snap.docs, FirestoreSource.server);
+        var raw =
+            await DependencyLoader.loadObjectList<T>(firestoreNeo, snap.docs);
         raw.sort();
         yield raw;
       }
@@ -44,19 +56,21 @@ abstract class FirestoreQuery<T extends JsonObject>
   FirestoreQuery(
       {required this.query,
       required super.fromJson,
-      required super.firestoreNeo});
+      required super.firestoreNeo,
+      required super.loadAll});
 }
 
 class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
-  CollectionReference<Document> path;
+  WrapColRef path;
 
-  FirestoreCollection(
-      FirestoreNeo firestoreNeo, this.path, T Function(Document d) fromJson,
+  FirestoreCollection(FirestoreNeo firestoreNeo, this.path,
+      T Function(Document d) fromJson, bool loadAll,
       {Query<Document> Function(Query<Document> query)? configureQuery})
       : super(
             firestoreNeo: firestoreNeo,
-            query: configureQuery != null ? configureQuery(path) : path,
-            fromJson: fromJson);
+            query: configureQuery != null ? configureQuery(path.ref) : path.ref,
+            fromJson: fromJson,
+            loadAll: loadAll);
 
   Future<void> delete(T t) async => await t.reference?.delete();
 
@@ -69,31 +83,31 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
     }
   }
 
-  Future<List<T>> get(FirestoreSource source) async {
+  Future<List<T>> getList() async {
     return await DependencyLoader.loadObjectList<T>(
-        firestoreNeo, (await query.getFromSource(source)).docs, source)
+        firestoreNeo, await query.getDocs())
       ..sort();
   }
 
-  Future<T> getById(String id, [FirestoreSource? source]) async {
-    var list = await path.doc(id).getWithDependencies<T>(firestoreNeo, source);
+  Future<T> getById(String id) async {
+    var list = await path.doc(id).getWithDependencies<T>(firestoreNeo);
     return list;
   }
 
   Future<void> deleteAll([bool ignoreFilter = false]) async {
-    QuerySnapshot<Document> objs;
+    List<QueryDocumentSnapshot<Document>> objs;
     if (ignoreFilter) {
-      objs = await path.getFromSource(FirestoreSource.server);
+      objs = await path.getDocs();
     } else {
-      objs = await query.getFromSource(FirestoreSource.server);
+      objs = await query.getDocs();
     }
-    for (var obj in objs.docs) {
+    for (var obj in objs) {
       await obj.reference.delete();
     }
   }
 
   @override
-  bool isApplicable(CollectionReference<Object?> ref) {
-    return path.path == ref.path;
+  bool isApplicable(WrapColRef ref) {
+    return path == ref;
   }
 }

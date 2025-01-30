@@ -23,7 +23,7 @@ class DependencyLoader {
     return data;
   }
 
-  static Set<DocRef> summarize(dynamic data, Set<DocRef> references) {
+  static Set<WrapDocRef> summarize(dynamic data, Set<WrapDocRef> references) {
     Iterable? iterable;
     if (data is Iterable) {
       iterable = data;
@@ -33,7 +33,7 @@ class DependencyLoader {
           .map((e) => e.value)
           .toList();
     } else if (data is DocRef) {
-      references.add(data);
+      references.add(WrapDocRef(data));
     } else if (data is num ||
         data is String ||
         data is DateTime ||
@@ -51,39 +51,36 @@ class DependencyLoader {
     return references;
   }
 
-  static Future<T> loadObject<T extends JsonObject>(
-      FirestoreNeo firestoreNeo, DocumentReference<Map<String, dynamic>> ref,
-      [FirestoreSource? source]) async {
-    var data = await ref.getFromSourceAsObject(source);
-    var required = summarize(data, {});
-
-    Map<DocRef, dynamic> loaded = await load(required, source);
-    loaded[ref] = data;
-
-    Map<DocRef, dynamic> cache = {};
-
-    if (loaded.isNotEmpty) {
-      loaded = await _loadObjectList(firestoreNeo, loaded, cache, source);
+  static Future<void> summarizeAndLoad(String base, FirestoreNeo firestoreNeo,
+      Map<WrapDocRef, dynamic> cache) async {
+    var data = cache;
+    while (true) {
+      var required = summarize(data, {});
+      required.removeAll(cache.keys);
+      if (required.isEmpty) return;
+      data = await load(firestoreNeo, required, base);
+      cache.addAll(data);
     }
-    fromJson(loaded, firestoreNeo);
-    return loaded[ref];
+  }
+
+  static Future<T> loadObject<T extends JsonObject>(
+      FirestoreNeo firestoreNeo, WrapDocRef ref) async {
+    var res = await loadObjectList<T>(firestoreNeo, [await ref.getDoc()]);
+
+    return res.first;
   }
 
   static Future<List<T>> loadObjectList<T extends JsonObject>(
-      FirestoreNeo firestoreNeo, List<DocumentSnapshot<Document>> data,
-      [FirestoreSource? source]) async {
-    Map<DocRef, dynamic> res;
+      FirestoreNeo firestoreNeo, List<DocumentSnapshot<Document>> data) async {
     try {
-      Map<DocRef, dynamic> cache = {};
-      Map<DocRef, dynamic> docs = data.groupFoldBy(
-        (e) => e.reference,
+      Map<WrapDocRef, dynamic> docs = data.groupFoldBy(
+        (e) => WrapDocRef(e.reference),
         (previous, element) => element.data(),
       );
-      res = await _loadObjectList(firestoreNeo, docs, cache, source);
-      fromJson(res, firestoreNeo);
-      assert(!res.values.any((element) => element.reference == null));
+      debugPrint("start loading $T");
+      await summarizeAndLoad(T.toString(), firestoreNeo, docs);
 
-      return res.values.map((e) => e as T).toList();
+      return (_combine(firestoreNeo, data, docs) as List).cast();
     } catch (e, stack) {
       debugPrint(e.toString());
       debugPrintStack(stackTrace: stack);
@@ -91,81 +88,127 @@ class DependencyLoader {
     }
   }
 
-  static void fromJson(Map<DocRef, dynamic> res, FirestoreNeo firestoreNeo) {
+  static FirestoreCollectionBase<JsonObject> _getCollection(
+      FirestoreNeo firestoreNeo, WrapColRef k) {
+    var col =
+        firestoreNeo.collections.where((c) => c.isApplicable(k)).firstOrNull;
+    if (col == null) {
+      throw Exception("no FirestoreCollection found for $k");
+    }
+    return col;
+  }
+
+  static void fromJson(
+      Map<WrapDocRef, dynamic> res, FirestoreNeo firestoreNeo) {
     for (var k in res.keys) {
-      var col = firestoreNeo.collections
-          .where((c) => c.isApplicable(k.parent))
-          .firstOrNull;
-      if (col == null) {
-        throw Exception("no FirestoreCollection found for ${k.path}");
-      }
+      var col = _getCollection(firestoreNeo, k.parent);
       try {
         res[k] = col.fromJson(res[k])
           ..reference = k
           ..properties = res[k];
       } catch (e, stack) {
-        debugPrint("Parsing failed for ${k.path}: $e\n${res[k]}");
+        debugPrint("Parsing failed for $k: $e\n${res[k]}");
         debugPrintStack(stackTrace: stack);
       }
     }
   }
 
-  static Future<Map<DocRef, dynamic>> _loadObjectList(
-      FirestoreNeo firestoreNeo,
-      Map<DocRef, dynamic> data,
-      Map<DocRef, dynamic> cache,
-      FirestoreSource? source) async {
-    Set<DocRef> required = summarize(data, {});
-    required.removeAll(cache.keys);
-    Map<DocRef, dynamic> loaded = await load(required, source);
-
-    if (loaded.isNotEmpty) {
-      loaded = await _loadObjectList(firestoreNeo, loaded, cache, source);
+  static dynamic _combine(
+      FirestoreNeo firestoreNeo, dynamic data, Map<WrapDocRef, dynamic> cache) {
+    if (data is DocumentSnapshot<Document>) {
+      return _combine(firestoreNeo, data.reference, cache);
     }
-    fromJson(loaded, firestoreNeo);
-    cache.addAll(loaded);
-
-    return _combine(data, cache) as Map<DocRef, dynamic>;
-  }
-
-  static dynamic _combine(dynamic data, Map<DocRef, dynamic> cache) {
     if (data is Iterable) {
-      return [for (var i in data) _combine(i, cache)];
+      return [for (var i in data) _combine(firestoreNeo, i, cache)];
     }
-    if (data is Map<DocRef, dynamic>) {
-      return {for (var i in data.entries) i.key: _combine(i.value, cache)};
+    if (data is Map<WrapDocRef, dynamic>) {
+      return {
+        for (var i in data.entries)
+          i.key: _combine(firestoreNeo, i.value, cache)
+      };
     }
     if (data is Map<String, dynamic>) {
-      return {for (var i in data.entries) i.key: _combine(i.value, cache)};
+      return {
+        for (var i in data.entries)
+          i.key: _combine(firestoreNeo, i.value, cache)
+      };
     }
     if (data is DocRef) {
-      return cache[data];
+      data = WrapDocRef(data);
+      var res = cache[data];
+      if (res is Document) {
+        res = _getCollection(firestoreNeo, data.parent)
+            .fromJson(_combine(firestoreNeo, res, cache))
+          ..reference = data;
+        cache[data] = res;
+      }
+      return res;
     }
     return data;
   }
 
-  static Future<Map<DocRef, dynamic>> load(Set<DocRef> references,
-      [FirestoreSource? source]) async {
+  static Future<Map<WrapDocRef, Document>> load(FirestoreNeo firestoreNeo,
+      Set<WrapDocRef> references, String base) async {
     var collections = references.groupSetsBy((dr) => dr.parent);
 
+    Map<WrapDocRef, Document> res = {};
     for (var col in collections.entries) {
-      debugPrint("load ${col.key.path}: ${col.value.map(
-            (e) => e.id,
-          ).join(", ")}");
-    }
+      var firestoreCollection = _getCollection(firestoreNeo, col.key);
 
-    Map<DocRef, dynamic> res = {};
-    for (var col in collections.entries) {
-      for (var slice in col.value.slices(30)) {
-        var query = await col.key
-            .where(FieldPath.documentId, whereIn: slice.map((e) => e.id))
-            .getFromSource(source);
-        for (var doc in query.docs) {
-          var d = doc.data();
-          res[doc.reference] = d;
-        }
+      if (firestoreCollection.loadAll) {
+        await _loadAll(col.key, res, firestoreNeo, base);
+      } else {
+        await _loadByIds(col.value, res);
       }
     }
     return res;
+  }
+
+  static Future<void> _loadAll(WrapColRef col, Map<WrapDocRef, Document> res,
+      FirestoreNeo firestoreNeo, String base) async {
+    var docCache = firestoreNeo.cache.putIfAbsent(col, () => {});
+    var lastLoadedUpdate = firestoreNeo.lastLoadedUpdate[col];
+    var lastLoadFilter = lastLoadedUpdate == null
+        ? null
+        : Filter.or(
+            Filter(updatedAt, isGreaterThan: lastLoadedUpdate),
+            Filter(updatedAt, isNull: true),
+          );
+
+    // debugPrint("load $base all $col: $lastLoadedUpdate");
+    var start = DateTime.now();
+    var docs = await col.where(lastLoadFilter).getDocs();
+    var stop = DateTime.now();
+    //   debugPrint("load all $col took ${stop.difference(start)}");
+    for (var doc in docs) {
+      var d = doc.data();
+      docCache[WrapDocRef(doc.reference)] = d;
+      var docUpdate = d[updatedAt];
+      if (docUpdate == null || docUpdate is! Timestamp) continue;
+      if (lastLoadedUpdate == null ||
+          lastLoadedUpdate.millisecondsSinceEpoch <
+              docUpdate.millisecondsSinceEpoch) {
+        lastLoadedUpdate = docUpdate;
+      }
+    }
+
+    firestoreNeo.lastLoadedUpdate[col] = lastLoadedUpdate!;
+    res.addAll(docCache);
+  }
+
+  static Future<void> _loadByIds(
+      Set<WrapDocRef> value, Map<WrapDocRef, Document> res) async {
+    var col = value.first.parent;
+    //  debugPrint("load id-based $col: ${value.map((e) => e.id).join(", ")}");
+    var slices = value.slices(30);
+    for (var slice in slices) {
+      var docFilter =
+          Filter(FieldPath.documentId, whereIn: slice.map((e) => e.id));
+      var docs = await col.where(docFilter).getDocs();
+      for (var doc in docs) {
+        res[WrapDocRef(doc.reference)] = doc.data();
+      }
+      //TODO: load statistics
+    }
   }
 }

@@ -1,16 +1,30 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-DocumentReference? loadOptionalReference(dynamic ref) {
-  if (ref is DocumentReference) return ref;
+import 'firestore_neo.dart';
+
+WrapDocRef? loadOptionalReference(dynamic ref) {
+  if (ref is DocRef) return WrapDocRef(ref);
   return null;
+}
+
+Timestamp? fromJsonTimestamp(dynamic json) {
+  return json;
+}
+
+FieldValue updateTimestamp(_) => FieldValue.serverTimestamp();
+
+mixin LastUpdate {
+  @JsonKey(fromJson: fromJsonTimestamp, toJson: updateTimestamp)
+  Timestamp? updatedAt;
 }
 
 mixin JsonObject {
   @JsonKey(includeToJson: false, fromJson: loadOptionalReference)
-  DocumentReference? reference;
+  WrapDocRef? reference;
   @JsonKey(includeFromJson: false, includeToJson: false)
   late Map<String, dynamic> properties;
+
   Map<String, dynamic> toJson();
 
   @override
@@ -19,11 +33,11 @@ mixin JsonObject {
     if (other is JsonObject) {
       return reference != null &&
           other.reference != null &&
-          reference?.path == other.reference?.path;
+          reference == other.reference;
     }
     return false;
   }
 
   @override
-  int get hashCode => reference?.path.hashCode ?? 0;
+  int get hashCode => reference.hashCode;
 }

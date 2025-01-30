@@ -5,7 +5,7 @@ import 'firestore_neo.dart';
 
 List<DocumentReference<Object?>?> referenceList<T extends JsonObject>(
     Iterable list) {
-  return [for (var e in list) e.reference];
+  return [for (var e in list) e.reference?.ref];
 }
 
 List<Document> listToJson<T extends JsonObject>(List list) {
@@ -15,8 +15,9 @@ List<Document> listToJson<T extends JsonObject>(List list) {
   ];
 }
 
-reference(JsonObject? obj) => obj?.reference;
-object(JsonObject? obj) => obj?.toJson();
+reference(JsonObject? obj) => obj?.reference?.ref;
+
+object(JsonObject? obj) => obj?.toJson()?..remove(updatedAt);
 
 class DateNullConverter implements JsonConverter<DateTime?, dynamic> {
   const DateNullConverter();
@@ -30,6 +31,21 @@ class DateNullConverter implements JsonConverter<DateTime?, dynamic> {
       return DateTime.fromMillisecondsSinceEpoch(l.millisecondsSinceEpoch);
     }
     if (l is String) return DateTime.tryParse(l);
+    return null;
+  }
+}
+
+class TimestampNullConverter implements JsonConverter<Timestamp?, dynamic> {
+  const TimestampNullConverter();
+
+  @override
+  dynamic toJson(Timestamp? dt) => dt;
+
+  @override
+  Timestamp? fromJson(dynamic l) {
+    if (l is Timestamp) {
+      return l;
+    }
     return null;
   }
 }
