@@ -175,11 +175,7 @@ class DependencyLoader {
             Filter(updatedAt, isNull: true),
           );
 
-    // debugPrint("load $base all $col: $lastLoadedUpdate");
-    var start = DateTime.now();
     var docs = await col.where(lastLoadFilter).getDocs();
-    var stop = DateTime.now();
-    //   debugPrint("load all $col took ${stop.difference(start)}");
     for (var doc in docs) {
       var d = doc.data();
       docCache[WrapDocRef(doc.reference)] = d;
