@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:collection/collection.dart';
 import 'package:firestore_neo/firestore_extensions.dart';
 
 import 'dependency_loader.dart';
@@ -139,4 +140,16 @@ abstract class FirestoreNeo {
   var cache = <WrapColRef, Map<WrapDocRef, Document>>{};
 
   List<FirestoreCollectionBase<JsonObject>> get collections;
+
+  Future<T> save<T extends JsonObject>(T t) async {
+    var col = collections.firstWhereOrNull((element) => element.matchesType(t));
+    if (col == null)
+      throw Exception("No collection found for type ${t.runtimeType}");
+
+    if (col is FirestoreCollection) {
+      await col.save(t);
+    }
+
+    return t;
+  }
 }

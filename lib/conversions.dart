@@ -3,19 +3,21 @@ import 'package:json_annotation/json_annotation.dart';
 
 import 'firestore_neo.dart';
 
-List<DocumentReference<Object?>?> referenceList<T extends JsonObject>(
-    Iterable list) {
-  return [for (var e in list) e.reference?.ref];
+List referenceList<T extends JsonObject>(Iterable list) {
+  return [for (var e in list) reference(e)];
 }
 
-List<Document> listToJson<T extends JsonObject>(List list) {
+List<Document> iterableToJson<T extends JsonObject>(Iterable list) {
   return [
     for (var e in list)
       if (e is JsonObject) e.toJson() else e
   ];
 }
 
-reference(JsonObject? obj) => obj?.reference?.ref;
+List<Document> listToJson<T extends JsonObject>(List list) =>
+    iterableToJson(list);
+
+reference(JsonObject? obj) => obj?.reference?.ref ?? obj;
 
 object(JsonObject? obj) => obj?.toJson()?..remove(updatedAt);
 

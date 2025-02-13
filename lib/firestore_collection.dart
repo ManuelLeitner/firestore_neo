@@ -17,9 +17,16 @@ abstract class FirestoreCollectionBase<T extends JsonObject> {
   FirestoreCollectionBase(
       {required this.fromJson,
       required this.firestoreNeo,
-      required this.loadAll});
+      required this.loadAll}) {
+    assert(
+        T != JsonObject, "pass real type (not JsonObject) as generic argument");
+  }
 
   bool isApplicable(WrapColRef ref);
+
+  bool matchesType(dynamic obj) {
+    return obj is T;
+  }
 }
 
 class FirestoreDeserializer<T extends JsonObject>
@@ -74,13 +81,42 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
 
   Future<void> delete(T t) async => await t.reference?.delete();
 
+  _removeObjects(dynamic data, Set<JsonObject> res) {
+    if (data is Map<String, dynamic>) {
+      return {for (var e in data.entries) e.key: _removeObjects(e.value, res)};
+    }
+    if (data is Map) {
+      return {for (var e in data.entries) e.key: _removeObjects(e.value, res)};
+    }
+    if (data is Iterable) {
+      return data.map((o) => _removeObjects(o, res)).toList();
+    }
+    if (data is JsonObject) {
+      res.add(data);
+      return null;
+    }
+    return data;
+  }
+
   Future<void> save(T t) async {
-    var json = DependencyLoader.toJson(t);
+    var dep = <JsonObject>{};
+
+    var json = _removeObjects(t.toJson(), dep);
+    dep.remove(t);
+
     if (t.reference != null) {
       await path.doc(t.reference!.id).set(json);
     } else {
       t.reference = await path.add(json);
     }
+
+    if (dep.isEmpty) return;
+
+    for (var d in dep) {
+      await firestoreNeo.save(d);
+    }
+
+    await t.reference!.set(t.toJson());
   }
 
   Future<List<T>> getList() async {
