@@ -1,8 +1,12 @@
+import 'dart:collection' show ListQueue;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'firestore_neo.dart';
+
+part 'combiner.dart';
 
 class DependencyLoader {
   static Document toJson(dynamic data) {
@@ -71,7 +75,8 @@ class DependencyLoader {
   }
 
   static Future<List<T>> loadObjectList<T extends JsonObject>(
-      FirestoreNeo firestoreNeo, List<DocumentSnapshot<Document>> data) async {
+      FirestoreNeo firestoreNeo,
+      Iterable<DocumentSnapshot<Document>> data) async {
     try {
       Map<WrapDocRef, dynamic> docs = data.groupFoldBy(
         (e) => WrapDocRef(e.reference),
@@ -80,7 +85,9 @@ class DependencyLoader {
       debugPrint("start loading $T");
       await summarizeAndLoad(T.toString(), firestoreNeo, docs);
 
-      return (_combine(firestoreNeo, data, docs) as List).cast();
+      var combiner = Combiner(firestoreNeo, docs);
+
+      return combiner.combine(data);
     } catch (e, stack) {
       debugPrint(e.toString());
       debugPrintStack(stackTrace: stack);
@@ -111,40 +118,6 @@ class DependencyLoader {
         debugPrintStack(stackTrace: stack);
       }
     }
-  }
-
-  static dynamic _combine(
-      FirestoreNeo firestoreNeo, dynamic data, Map<WrapDocRef, dynamic> cache) {
-    if (data is DocumentSnapshot<Document>) {
-      return _combine(firestoreNeo, data.reference, cache);
-    }
-    if (data is Iterable) {
-      return [for (var i in data) _combine(firestoreNeo, i, cache)];
-    }
-    if (data is Map<WrapDocRef, dynamic>) {
-      return {
-        for (var i in data.entries)
-          i.key: _combine(firestoreNeo, i.value, cache)
-      };
-    }
-    if (data is Map<String, dynamic>) {
-      return {
-        for (var i in data.entries)
-          i.key: _combine(firestoreNeo, i.value, cache)
-      };
-    }
-    if (data is DocRef) {
-      data = WrapDocRef(data);
-      var res = cache[data];
-      if (res is Document) {
-        res = _getCollection(firestoreNeo, data.parent)
-            .fromJson(_combine(firestoreNeo, res, cache))
-          ..reference = data;
-        cache[data] = res;
-      }
-      return res;
-    }
-    return data;
   }
 
   static Future<Map<WrapDocRef, Document>> load(FirestoreNeo firestoreNeo,
@@ -188,7 +161,9 @@ class DependencyLoader {
       }
     }
 
-    firestoreNeo.lastLoadedUpdate[col] = lastLoadedUpdate!;
+    if (lastLoadedUpdate != null) {
+      firestoreNeo.lastLoadedUpdate[col] = lastLoadedUpdate;
+    }
     res.addAll(docCache);
   }
 

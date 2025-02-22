@@ -19,6 +19,10 @@ mixin LastUpdate {
   Timestamp? updatedAt;
 }
 
+mixin AfterFixUp {
+  void afterFixUp();
+}
+
 mixin JsonObject {
   @JsonKey(includeToJson: false, fromJson: loadOptionalReference)
   WrapDocRef? reference;

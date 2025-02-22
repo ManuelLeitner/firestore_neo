@@ -10,6 +10,8 @@ abstract class FirestoreCollectionBase<T extends JsonObject> {
   T Function(Document d) fromJson;
   FirestoreNeo firestoreNeo;
 
+  List<T> get newList => <T>[];
+
   /// load all optimizes to load in a way that only recently updated objects are loaded
   /// However document id cannot be filtered
   bool loadAll;
@@ -104,6 +106,7 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
     var json = _removeObjects(t.toJson(), dep);
     dep.remove(t);
 
+    var r = t.reference;
     if (t.reference != null) {
       await path.doc(t.reference!.id).set(json);
     } else {
@@ -116,13 +119,22 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
       await firestoreNeo.save(d);
     }
 
-    await t.reference!.set(t.toJson());
+    dep = {};
+    json = _removeObjects(t.toJson(), dep);
+    dep.remove(t);
+
+    await t.reference!.set(json);
   }
 
   Future<List<T>> getList() async {
-    return await DependencyLoader.loadObjectList<T>(
-        firestoreNeo, await query.getDocs())
-      ..sort();
+    var res = await DependencyLoader.loadObjectList<T>(
+        firestoreNeo, await query.getDocs());
+
+    if (res.firstOrNull is Comparable<T>) {
+      res.sort();
+    }
+
+    return res;
   }
 
   Future<T> getById(String id) async {

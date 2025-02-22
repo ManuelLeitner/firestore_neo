@@ -17,6 +17,7 @@ typedef ColRef = CollectionReference<Document>;
 
 class WrapDocRef {
   DocRef ref;
+
   WrapDocRef(this.ref);
 
   WrapColRef get parent => WrapColRef(ref.parent);
@@ -61,6 +62,7 @@ class WrapDocRef {
 
 class WrapColRef {
   ColRef ref;
+
   WrapColRef(this.ref);
 
   @override
@@ -143,13 +145,34 @@ abstract class FirestoreNeo {
 
   Future<T> save<T extends JsonObject>(T t) async {
     var col = collections.firstWhereOrNull((element) => element.matchesType(t));
-    if (col == null)
+    if (col == null) {
       throw Exception("No collection found for type ${t.runtimeType}");
+    }
 
     if (col is FirestoreCollection) {
       await col.save(t);
     }
 
     return t;
+  }
+
+  Future<List<JsonObject>> load(List data) async {
+    var load = <DocumentSnapshot<Document>>{};
+    for (var e in data) {
+      if (e is FirestoreQuery) {
+        load.addAll((await e.query.get()).docs);
+      } else if (e is DocumentSnapshot<Document>) {
+        load.add(e);
+      } else if (e is DocumentReference<Document>) {
+        load.add(await e.get());
+      } else if (e is WrapDocRef) {
+        load.add(await e.ref.get());
+      } else if (e is CollectionReference<Document>) {
+        load.addAll((await e.get()).docs);
+      } else if (e is WrapColRef) {
+        load.addAll((await e.ref.get()).docs);
+      }
+    }
+    return await DependencyLoader.loadObjectList<JsonObject>(this, load);
   }
 }
