@@ -106,7 +106,6 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
     var json = _removeObjects(t.toJson(), dep);
     dep.remove(t);
 
-    var r = t.reference;
     if (t.reference != null) {
       await path.doc(t.reference!.id).set(json);
     } else {
