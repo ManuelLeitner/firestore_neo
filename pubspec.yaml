@@ -11,10 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
 
-  cloud_firestore: ^5.6.3
+  cloud_firestore: ^5.6.5
   json_annotation: ^4.9.0
   collection: ^1.19.1
-
 
 dev_dependencies:
   flutter_test:

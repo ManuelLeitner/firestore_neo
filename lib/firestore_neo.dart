@@ -2,9 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:firestore_neo/firestore_extensions.dart';
 
-import 'dependency_loader.dart';
-import 'firestore_collection.dart';
-import 'json_object.dart';
+import 'package:firestore_neo/dependency_loader.dart';
+import 'package:firestore_neo/firestore_collection.dart';
+import 'package:firestore_neo/json_object.dart';
 
 export 'conversions.dart';
 export 'json_object.dart';

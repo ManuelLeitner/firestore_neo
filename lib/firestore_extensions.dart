@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firestore_neo/firestore_neo.dart';
 
-import 'dependency_loader.dart';
+import 'package:firestore_neo/dependency_loader.dart';
 
 class FirestoreStat {
   int totalLoads = 0, cachedLoads = 0;

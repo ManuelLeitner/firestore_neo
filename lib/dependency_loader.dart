@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 
-import 'firestore_neo.dart';
+import 'package:firestore_neo/firestore_neo.dart';
 
 part 'combiner.dart';
 
@@ -13,7 +13,7 @@ class DependencyLoader {
     return _toJson(data) as Document;
   }
 
-  static _toJson(dynamic data) {
+  static dynamic _toJson(dynamic data) {
     if (data is Map<String, dynamic>) {
       return {for (var e in data.entries) e.key: _toJson(e.value)};
     }

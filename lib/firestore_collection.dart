@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/widgets.dart';
 
-import 'dependency_loader.dart';
-import 'firestore_neo.dart';
+import 'package:firestore_neo/dependency_loader.dart';
+import 'package:firestore_neo/firestore_neo.dart';
 
 const updatedAt = "updatedAt";
 
@@ -83,7 +83,7 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
 
   Future<void> delete(T t) async => await t.reference?.delete();
 
-  _removeObjects(dynamic data, Set<JsonObject> res) {
+  dynamic _removeObjects(dynamic data, Set<JsonObject> res) {
     if (data is Map<String, dynamic>) {
       return {for (var e in data.entries) e.key: _removeObjects(e.value, res)};
     }
