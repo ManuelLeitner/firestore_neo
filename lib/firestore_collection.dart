@@ -100,9 +100,12 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
     return data;
   }
 
-  Future<void> save(T t) async {
-    var dep = <JsonObject>{};
+  Future<void> save(T t, {String? id}) async {
+    if (t.reference == null && id != null) {
+      t.reference = path.doc(id);
+    }
 
+    var dep = <JsonObject>{};
     var json = _removeObjects(t.toJson(), dep);
     dep.remove(t);
 
