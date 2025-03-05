@@ -93,15 +93,12 @@ class Combiner {
     if (data is DocumentSnapshot<Document>) {
       res = _combine(data.reference, data.reference);
     } else if (data is List) {
-      var ref = data
-          .whereType<DocRef>()
-          .firstOrNull;
+      var ref = data.whereType<DocRef>().firstOrNull;
       if (ref == null) {
         res = [for (var e in data) _combine(e, doc)];
       } else {
-        res = DependencyLoader
-            ._getCollection(
-            firestoreNeo, WrapColRef(ref.parent))
+        res = DependencyLoader._getCollection(
+                firestoreNeo, WrapColRef(ref.parent))
             .newList;
 
         for (var i = data.length - 1; i >= 0; i--) {
