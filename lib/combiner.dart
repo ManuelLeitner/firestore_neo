@@ -65,8 +65,7 @@ class Combiner {
 
   Combiner(this.firestoreNeo, this.cache);
 
-  List<T> combine<T extends JsonObject>(
-      Iterable<DocumentSnapshot<Document>> data) {
+  List<T> combine<T extends JsonObject>(Iterable<DocumentSnapshot<Document>> data) {
     var res = data.map((e) {
       return _combine(e, e.reference) as T;
     }).toList();
@@ -97,9 +96,7 @@ class Combiner {
       if (ref == null) {
         res = [for (var e in data) _combine(e, doc)];
       } else {
-        res = DependencyLoader._getCollection(
-                firestoreNeo, WrapColRef(ref.parent))
-            .newList;
+        res = DependencyLoader._getCollection(firestoreNeo, WrapColRef(ref.parent)).newList;
 
         for (var i = data.length - 1; i >= 0; i--) {
           var e = data[i];
@@ -121,9 +118,7 @@ class Combiner {
       res = cache[data];
       if (res is Document) {
         var combined = _combine(res, data.ref as DocRef);
-        res = DependencyLoader._getCollection(firestoreNeo, data.parent)
-            .fromJson(combined)
-          ..reference = data;
+        res = DependencyLoader._getCollection(firestoreNeo, data.parent).fromJson(combined)..reference = data;
         cache[data] = res;
 
         if (res is AfterFixUp) _fixups.addLast(_AfterFixUp(res));

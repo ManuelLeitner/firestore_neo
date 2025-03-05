@@ -37,8 +37,7 @@ List<dynamic> iterableToJson<T extends JsonObject>(Iterable list) {
   ];
 }
 
-List<Map<String, dynamic>> objectIterableToJson<T extends JsonObject>(
-    Iterable<T> list) {
+List<Map<String, dynamic>> objectIterableToJson<T extends JsonObject>(Iterable<T> list) {
   return [for (var e in list) e.toJson()];
 }
 
@@ -50,13 +49,11 @@ dynamic referenceOrObject(JsonObject? obj) {
   return json;
 }
 
-List<dynamic> listToJson<T extends JsonObject>(List list) =>
-    iterableToJson(list);
+List<dynamic> listToJson<T extends JsonObject>(List list) => iterableToJson(list);
 
 dynamic reference(JsonObject? obj) => obj?.reference?.ref ?? obj;
 
-Map<String, dynamic>? object(JsonObject? obj) =>
-    obj?.toJson()?..remove(updatedAt);
+Map<String, dynamic>? object(JsonObject? obj) => obj?.toJson()?..remove(updatedAt);
 
 class DateNullConverter implements JsonConverter<DateTime?, dynamic> {
   const DateNullConverter();
