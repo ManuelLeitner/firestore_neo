@@ -28,7 +28,9 @@ class WrapDocRef {
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is WrapDocRef && ref.path == other.ref.path;
+  bool operator ==(Object other) =>
+      identical(this, other) || (other is WrapDocRef && ref.path == other.ref.path) ||
+          (other is DocRef && ref.path == other.path);
 
   @override
   int get hashCode => ref.path.hashCode;
