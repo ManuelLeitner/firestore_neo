@@ -40,6 +40,7 @@ abstract class FirestoreQuery<T extends JsonObject> extends FirestoreCollectionB
   Query<Document> query;
 
   Stream<List<T>> get stream async* {
+    print("stream $query");
     try {
       await for (var snap in query.snapshots()) {
         var raw = await DependencyLoader.loadObjectList<T>(firestoreNeo, snap.docs);
