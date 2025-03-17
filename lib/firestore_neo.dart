@@ -1,15 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
-import 'package:firestore_neo/firestore_extensions.dart';
-
 import 'package:firestore_neo/dependency_loader.dart';
 import 'package:firestore_neo/firestore_collection.dart';
+import 'package:firestore_neo/firestore_extensions.dart';
 import 'package:firestore_neo/json_object.dart';
 
 export 'conversions.dart';
-export 'json_object.dart';
 export 'firestore_collection.dart';
 export 'firestore_extensions.dart';
+export 'json_object.dart';
 
 typedef Document = Map<String, dynamic>;
 typedef DocRef = DocumentReference<Document>;
@@ -29,8 +28,9 @@ class WrapDocRef {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || (other is WrapDocRef && ref.path == other.ref.path) ||
-          (other is DocRef && ref.path == other.path);
+      identical(this, other) ||
+      (other is WrapDocRef && ref.path == other.ref.path) ||
+      (other is DocRef && ref.path == other.path);
 
   @override
   int get hashCode => ref.path.hashCode;

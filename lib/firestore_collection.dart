@@ -1,8 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/widgets.dart';
-
 import 'package:firestore_neo/dependency_loader.dart';
 import 'package:firestore_neo/firestore_neo.dart';
+import 'package:flutter/widgets.dart';
 
 const updatedAt = "updatedAt";
 

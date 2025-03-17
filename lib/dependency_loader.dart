@@ -2,9 +2,8 @@ import 'dart:collection' show ListQueue;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/cupertino.dart';
-
 import 'package:firestore_neo/firestore_neo.dart';
+import 'package:flutter/cupertino.dart';
 
 part 'combiner.dart';
 

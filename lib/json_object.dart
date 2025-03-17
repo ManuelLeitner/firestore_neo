@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:json_annotation/json_annotation.dart';
-
 import 'package:firestore_neo/firestore_neo.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 WrapDocRef? loadOptionalReference(dynamic ref) {
   if (ref is DocRef) return WrapDocRef(ref);

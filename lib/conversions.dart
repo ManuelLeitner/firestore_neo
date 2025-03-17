@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:json_annotation/json_annotation.dart';
-
 import 'package:firestore_neo/firestore_neo.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 class ReferenceList<T extends JsonObject> extends JsonConverter<List<T>, List> {
   const ReferenceList();
@@ -31,11 +30,12 @@ List<T> fromReferenceList<T extends JsonObject>(List? list) =>
     list is! List<JsonObject> ? <T>[] : list as List<T>? ?? <T>[];
 
 List<dynamic> iterableToJson<T extends JsonObject>(Iterable? list) {
-  return list == null ? [] : [
-    for (var e in list)
-      if (e is JsonObject) e.toJson() else
-        e
-  ];
+  return list == null
+      ? []
+      : [
+          for (var e in list)
+            if (e is JsonObject) e.toJson() else e
+        ];
 }
 
 List<Map<String, dynamic>> objectIterableToJson<T extends JsonObject>(Iterable<T>? list) {
@@ -54,9 +54,7 @@ List<dynamic> listToJson<T extends JsonObject>(List<T>? list) => iterableToJson(
 
 dynamic reference(JsonObject? obj) => obj?.reference?.ref ?? obj;
 
-Map<String, dynamic>? object(JsonObject? obj) =>
-    obj?.toJson()
-      ?..remove(updatedAt);
+Map<String, dynamic>? object(JsonObject? obj) => obj?.toJson()?..remove(updatedAt);
 
 class DateNullConverter implements JsonConverter<DateTime?, dynamic> {
   const DateNullConverter();
