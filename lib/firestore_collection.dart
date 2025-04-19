@@ -61,10 +61,10 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
   FirestoreCollection(FirestoreNeo firestoreNeo, this.path, T Function(Document d) fromJson, bool loadAll,
       {Query<Document> Function(Query<Document> query)? configureQuery})
       : super(
-            firestoreNeo: firestoreNeo,
-            query: configureQuery != null ? configureQuery(path.ref) : path.ref,
-            fromJson: fromJson,
-            loadAll: loadAll);
+      firestoreNeo: firestoreNeo,
+      query: configureQuery != null ? configureQuery(path.ref) : path.ref,
+      fromJson: fromJson,
+      loadAll: loadAll);
 
   Future<void> delete(T t) async => await t.reference?.delete();
 
@@ -85,7 +85,7 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
     return data;
   }
 
-  Future<void> save(T t, {String? id}) async {
+  Future<T> save(T t, {String? id}) async {
     if (t.reference == null && id != null) {
       t.reference = path.doc(id);
     }
@@ -100,7 +100,7 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
       t.reference = await path.add(json);
     }
 
-    if (dep.isEmpty) return;
+    if (dep.isEmpty) return t;
 
     for (var d in dep) {
       await firestoreNeo.save(d);
@@ -111,6 +111,8 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
     dep.remove(t);
 
     await t.reference!.set(json);
+
+    return t;
   }
 
   Future<List<T>> getList() async {
