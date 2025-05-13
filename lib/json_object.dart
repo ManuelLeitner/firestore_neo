@@ -34,7 +34,9 @@ mixin JsonObject {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is JsonObject) {
-      return reference != null && other.reference != null && reference == other.reference;
+      return reference != null &&
+          other.reference != null &&
+          reference == other.reference;
     }
     return false;
   }

@@ -20,7 +20,8 @@ Stream<FirestoreStat> firestoreStat = _firestoreStatController.stream;
 
 QuerySnapshot<T> addStatistics<T>(QuerySnapshot<T> snap) {
   _firestoreStat.totalLoads += snap.docs.length;
-  _firestoreStat.cachedLoads += snap.docs.where((element) => element.metadata.isFromCache).length;
+  _firestoreStat.cachedLoads +=
+      snap.docs.where((element) => element.metadata.isFromCache).length;
 
   _firestoreStatController.add(_firestoreStat);
   return snap;
@@ -40,13 +41,15 @@ extension FirestoreQueryExtension<T> on Query<T> {
   }
 }
 
-extension FirestoreQueryExtensionWithDependencies on Query<Map<String, dynamic>> {
+extension FirestoreQueryExtensionWithDependencies
+    on Query<Map<String, dynamic>> {
   Future<List<QueryDocumentSnapshot<Document>>> getDocs() async {
     var res = await get();
     return res.docs;
   }
 
-  Future<List<T>> getWithDependencies<T extends JsonObject>(FirestoreNeo firestore) async {
+  Future<List<T>> getWithDependencies<T extends JsonObject>(
+      FirestoreNeo firestore) async {
     var q = await get();
     return await DependencyLoader.loadObjectList<T>(firestore, q.docs);
   }
