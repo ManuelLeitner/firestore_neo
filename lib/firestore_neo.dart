@@ -43,15 +43,13 @@ class WrapDocRef {
 
   Future<void> delete() => ref.delete();
 
-  Future<void> set(Document data, [SetOptions? options]) =>
-      ref.set(toJson(data), options);
+  Future<void> set(Document data, [SetOptions? options]) => ref.set(toJson(data), options);
 
   Future<void> update(Map<String, dynamic> map) => ref.update(toJson(map));
 
   WrapColRef collection(String s) => WrapColRef(ref.collection(s));
 
-  Future<T> getWithDependencies<T extends JsonObject>(
-      FirestoreNeo firestoreNeo) async {
+  Future<T> getWithDependencies<T extends JsonObject>(FirestoreNeo firestoreNeo) async {
     return await DependencyLoader.loadObject<T>(firestoreNeo, this);
   }
 
@@ -70,13 +68,10 @@ class WrapColRef {
     return ref.path;
   }
 
-  Future<WrapDocRef> add(Document json) async =>
-      WrapDocRef(await ref.add(toJson(json)));
+  Future<WrapDocRef> add(Document json) async => WrapDocRef(await ref.add(toJson(json)));
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is WrapColRef && ref.path == other.ref.path;
+  bool operator ==(Object other) => identical(this, other) || other is WrapColRef && ref.path == other.ref.path;
 
   @override
   int get hashCode => ref.path.hashCode;
@@ -114,8 +109,7 @@ class WrapColRef {
 
   Future<List<QueryDocumentSnapshot<Document>>> getDocs() => ref.getDocs();
 
-  Query<Document> orderBy(Object field, {bool descending = false}) =>
-      ref.orderBy(field, descending: descending);
+  Query<Document> orderBy(Object field, {bool descending = false}) => ref.orderBy(field, descending: descending);
 }
 
 dynamic toJson(dynamic json) {
@@ -143,14 +137,14 @@ abstract class FirestoreNeo {
 
   List<FirestoreCollectionBase<JsonObject>> get collections;
 
-  Future<T> save<T extends JsonObject>(T t) async {
+  Future<T> save<T extends JsonObject>(T t, {Transaction? transaction}) async {
     var col = collections.firstWhereOrNull((element) => element.matchesType(t));
     if (col == null) {
       throw Exception("No collection found for type ${t.runtimeType}");
     }
 
     if (col is FirestoreCollection) {
-      await col.save(t);
+      await col.save(t, transaction: transaction);
     }
 
     return t;

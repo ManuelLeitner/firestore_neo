@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 import 'package:firestore_neo/dependency_loader.dart';
 import 'package:firestore_neo/firestore_neo.dart';
 import 'package:flutter/widgets.dart';
@@ -66,10 +66,10 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
   FirestoreCollection(FirestoreNeo firestoreNeo, this.path, T Function(Document d) fromJson, bool loadAll,
       {Query<Document> Function(Query<Document> query)? configureQuery})
       : super(
-            firestoreNeo: firestoreNeo,
-            query: configureQuery != null ? configureQuery(path.ref) : path.ref,
-            fromJson: fromJson,
-            loadAll: loadAll);
+      firestoreNeo: firestoreNeo,
+      query: configureQuery != null ? configureQuery(path.ref) : path.ref,
+      fromJson: fromJson,
+      loadAll: loadAll);
 
   Future<void> delete(T t) async => await t.reference?.delete();
 
@@ -90,7 +90,7 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
     return data;
   }
 
-  Future<T> save(T t, {String? id}) async {
+  Future<T> save(T t, {String? id, Transaction? transaction}) async {
     if (t.reference == null && id != null) {
       t.reference = path.doc(id);
     }
@@ -100,22 +100,34 @@ class FirestoreCollection<T extends JsonObject> extends FirestoreQuery<T> {
     dep.remove(t);
 
     if (t.reference != null) {
-      await path.doc(t.reference!.id).set(json);
+      if (transaction != null) {
+        transaction.set(t.reference!.ref, json);
+      } else {
+        await path.doc(t.reference!.id).set(json);
+      }
     } else {
-      t.reference = await path.add(json);
+      if (transaction != null) {
+        throw Exception("Transactions don't support adding new documents");
+      } else {
+        t.reference = await path.add(json);
+      }
     }
 
     if (dep.isEmpty) return t;
 
     for (var d in dep) {
-      await firestoreNeo.save(d);
+      await firestoreNeo.save(d, transaction: transaction);
     }
 
     dep = {};
     json = _removeObjects(t.toJson(), dep);
     dep.remove(t);
 
-    await t.reference!.set(json);
+    if (transaction != null) {
+      transaction.set(t.reference!.ref, json);
+    } else {
+      await t.reference!.set(json);
+    }
 
     return t;
   }
