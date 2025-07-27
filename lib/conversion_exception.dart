@@ -25,7 +25,7 @@ String buildString(data, [int indentation = 0]) {
   if (data is List<dynamic>) {
     var buffer = StringBuffer();
     for (var e in data) {
-      buffer.writeln("${buildString(e, indentation + 1)}");
+      buffer.writeln(buildString(e, indentation + 1));
     }
     return buffer.toString();
   }
